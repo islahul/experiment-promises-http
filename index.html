@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+  <title>TinyOwl Q Example</title>
+</head>
+
+<body>
+  <div id="mytext">
+  </div>
+
+  <script src="bower_components/jquery/dist/jquery.js"></script>
+  <script src="bower_components/q/q.js"></script>
+  <script>
+    var $http = {
+      get: get
+    };
+
+    function get(url, reqParams, overrideOptions) {
+      var defaultOptions = {
+        type: 'get',
+        data: reqParams,
+        url: url
+      };
+
+      overrideOptions = overrideOptions || {};
+      var options = $.extend(defaultOptions, overrideOptions);
+
+      // Initialising promise here
+      var deferred = Q.defer();
+
+      // Lets try success, error wrappers
+      deferred.promise.success = function(fn) {
+        deferred.promise.then(function(successObject) {
+          fn(successObject);
+        });
+
+        return deferred.promise;
+      };
+
+      deferred.promise.error = function(fn) {
+        deferred.promise.then(null, function(errorObject) {
+          fn(errorObject);
+        });
+
+        return deferred.promise;
+      };
+      // Ending wrappers
+
+      // This is asynchronous model fetch, is replaceable by any service
+      $.ajax(options)
+      .done(function(data, status, jqXHR) {
+        deferred.resolve({
+          data: data,
+          jqXHR: jqXHR
+        }); // Promises always resolve with one value, for carryover purposes
+      })
+      .fail(function(jqXHR, textStatus, errorThrown) {
+        deferred.reject({
+          errorThrown: errorThrown,
+          textStatus: textStatus,
+          jqXHR: jqXHR
+        }); // Promises always resolve with one value, for carryover purposes
+      });
+
+      // And we return the promise
+      return deferred.promise;
+    }
+  </script>
+
+
+  <script>
+    // Complex usage
+    $http.get('http://localhost:8000/get_detals')
+    // Usage Option 1
+    .success(function(response) {
+      console.log('hello this is success wrapper speaking', response.data);
+    })
+    .error(function(err) {
+      console.log('Shit just got seriously fucked', err.textStatus);
+      return err;
+    })
+    // Usage option 1 ends
+
+    // Usage option 2
+    .then(function(response) {
+      // Runs when success
+      console.log('received some data', response);
+
+      // We will also return data to be used in future
+      return " with dragon data? LOL ";
+    })
+    .catch(function(shitHappensHereToo) {
+      // This is also your choice of failing
+      console.log('This stops the chain? No it doesn\'t', shitHappensHereToo);
+      throw "fuck";                          // Because things can go wrong in between too, Try commenting this out
+      return "THIS SHIT IS AWESOME!";
+    })
+    // Usage option 2 ends
+
+    // Final wala stuff
+    .catch(function(e) {
+      console.log("caught fuck ", e, " again");
+
+      return "using bugridden Drogo"
+    })
+    .done(function(addedData) {
+      console.log("I will break the wheel " + addedData); // GOT Puns :P
+    });
+
+
+  </script>
+</body>
+</html>
